@@ -1,0 +1,104 @@
+.App {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  padding-top: 100px;
+
+}
+
+.container-copy {
+  display: flex;
+}
+.ring-transparent{
+  box-shadow: none;
+  border-radius: 0;
+  border: 1px solid rgb(230, 230, 230);
+  border-right: none;
+}
+.shadow-blue-gray-500\/20{
+box-shadow: none;
+  border-radius: 0;
+  border: 1px solid rgb(230, 230, 230); 
+
+}
+
+.refresh-container {
+  display: flex;
+  justify-content: center;
+}
+
+.refresh {
+  padding-left: 10px;
+}
+
+.copy-img {
+  height: 20px;
+  width: 20px;
+}
+
+.btn-copy {
+  color: rgb(171, 171, 171);
+padding-top: 10px;
+  display: flex;
+
+}
+
+.left-container {
+  border: 1px solid rgb(230, 230, 230); 
+  width: 40%;
+  height: calc(100vh - 200px);
+  margin: 0 0 0 10px;
+  border-right: none;
+
+}
+
+.inbox {
+  padding: 10px;
+    border-bottom: 1px solid rgb(230, 230, 230);
+
+}
+
+.welcome {
+  color: rgb(70, 122, 255);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.email-info {
+  padding: 10px;
+    border-bottom: 1px solid  rgb(230, 230, 230);
+}
+
+.right-container {
+
+    border: 1px solid rgb(230, 230, 230);
+  margin-right: 10px;
+  width: 100%;
+  height: calc(100vh - 200px);
+  background-color: rgba(233, 233, 233, 0.575);
+}
+
+.invisible-section {
+  border: 1px solid rgb(230, 230, 230);
+  border-left: none;
+padding: 22px;
+}
+
+.container-email {
+  display: flex !important;
+}
+
+.email-section{
+  padding: 10px
+}
+.email-body{
+  border: 1px solid rgb(230, 230, 230);
+  width: 98%;
+  height:calc( 69vh - 100px);
+  margin: 0 0 0 10px;
+  border-radius: 2px;
+  background-color: white;
+  outline: none!important;
+
+}
