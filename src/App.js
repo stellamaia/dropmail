@@ -1,66 +1,76 @@
 import React, { useState, useEffect } from "react";
 import './App.css';
+import axios from "axios";
 
-// Função para buscar a caixa de entrada
-const fetchInbox = async (setInbox) => {
+const AUTH_TOKEN = "web-test-20240226wxTbS";
+const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
+
+const fetchInbox = async (webSocket) => {
   try {
-    const response = await fetch('https://dropmail.me/api/graphql/web-test-20240216RDrO7');
-    const data = await response.json();
-    setInbox(data.messages);
+    if (webSocket.readyState === WebSocket.OPEN) {
+      webSocket.send(JSON.stringify({ command: "refreshInbox" }));
+    } else {
+      console.log('WebSocket is not open');
+    }
   } catch (error) {
     console.error('Error fetching inbox:', error);
   }
 };
 
 const App = () => {
-  const [email, setEmail] = useState('');
-  const [inbox, setInbox] = useState([]);
-  const [refreshTime, setRefreshTime] = useState(3);
+  const [email, setEmail] = useState(localStorage.getItem('temporaryEmail') || '');
+  const [webSocket, setWebSocket] = useState(null); // Estado para armazenar o WebSocket
 
   useEffect(() => {
-    const generateTemporaryEmail = async () => {
-      try {
-        const response = await fetch('https://dropmail.me/api/graphql/web-test-20240216RDrO7');
-        const data = await response.json();
-        setEmail(data.email);
-        localStorage.setItem('temp_email', data.email);
-      } catch (error) {
-        console.error('Error generating temporary email:', error);
-      }
-    };
-
-    const storedEmail = localStorage.getItem('temp_email');
-    if (!storedEmail) { // Se o email temporário não estiver armazenado, gera um novo
-      generateTemporaryEmail();
-    } else {
-      setEmail(storedEmail);
+    if (!email) {
+      generateTempEmail();
     }
-
-    const interval = setInterval(() => {
-      setRefreshTime(prevTime => {
-        if (prevTime === 0) {
-          fetchInbox(setInbox); // Adicionando setInbox como parâmetro
-          return 3;
-        } else {
-          return prevTime - 1;
-        }
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  const generateTempEmail = async () => {
+    try {
+      const response = await axios.post(`${CORS_PROXY}https://dropmail.me/api/graphql/${AUTH_TOKEN}`, {
+        query: `
+          mutation {
+            introduceSession {
+              id
+              addresses {
+                address
+              }
+            }
+          }
+        `
+      });
+      const email = response.data.data.introduceSession.addresses[0].address;
+      setEmail(email);
+      localStorage.setItem('temporaryEmail', email);
+    } catch (error) {
+      console.error("Error generating temp email:", error);
+    }
+  };
 
   const copyEmail = () => {
     navigator.clipboard.writeText(email);
   };
 
-  const openEmail = (id) => {
-    console.log(`Open email with ID: ${id}`);
+  const initializeWebSocket = () => {
+    const ws = new WebSocket(`wss://dropmail.me/api/graphql/${AUTH_TOKEN}/websocket`);
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      setWebSocket(ws);
+    };
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      setWebSocket(null);
+    };
   };
 
   const refreshInbox = () => {
-    fetchInbox(setInbox); // Adicionando setInbox como parâmetro
-    setRefreshTime(3);
+    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+      initializeWebSocket();
+    } else {
+      fetchInbox(webSocket);
+    }
   };
 
   return (
@@ -73,7 +83,7 @@ const App = () => {
               <input 
                 type="text" 
                 value={email} 
-                readOnly={true} // Alterado de onChange para readOnly
+                readOnly
                 placeholder="Email Address"
                 className="peer h-full w-full rounded-[7px] !border !border-gray-300 border-t-transparent bg-transparent bg-white px-3 py-2.5 font-sans text-sm font-normal text-blue-gray-700 shadow-lg shadow-gray-900/5 outline outline-0 ring-4 ring-transparent transition-all placeholder:text-gray-500 placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 focus:border-2 focus:!border-gray-900 focus:border-t-transparent focus:!border-t-gray-900 focus:outline-0 focus:ring-gray-900/10 disabled:border-0 disabled:bg-blue-gray-50" />
               <label className="before:content[' '] after:content[' '] pointer-events-none absolute left-0 -top-1.5 hidden h-full w-full select-none !overflow-visible truncate text-[11px] font-normal leading-tight text-gray-500 transition-all before:pointer-events-none before:mt-[6.5px] before:mr-1 before:box-border before:block before:h-1.5 before:w-2.5 before:rounded-tl-md before:border-t before:border-l before:border-blue-gray-200 before:transition-all after:pointer-events-none after:mt-[6.5px] after:ml-1 after:box-border after:block after:h-1.5 after:w-2.5 after:flex-grow after:rounded-tr-md after:border-t after:border-r after:border-blue-gray-200 after:transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:leading-[3.75] peer-placeholder-shown:text-blue-gray-500 peer-placeholder-shown:before:border-transparent peer-placeholder-shown:after:border-transparent peer-focus:text-[11px] peer-focus:leading-tight peer-focus:text-gray-900 peer-focus:before:border-t-2 peer-focus:before:border-l-2 peer-focus:before:!border-gray-900 peer-focus:after:border-t-2 peer-focus:after:border-r-2 peer-focus:after:!border-gray-900 peer-disabled:text-transparent peer-disabled:before:border-transparent peer-disabled:after:border-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500">
@@ -91,19 +101,12 @@ const App = () => {
         </div>
       </div>
       <div className="refresh-container">
-        <p>Autorefresh in {refreshTime} seconds</p>
-        <button className="refresh" onClick={refreshInbox}>Refresh</button> {/* Adicionado um espaço após "Refresh" */}
+        <button className="refresh" onClick={refreshInbox}>Refresh Inbox</button> 
       </div>
     
       <div className="container-email">
         <div className="left-container">
           <p className="inbox"> Inbox </p>
-          {inbox.map((email, index) => (
-            <div key={index} onClick={() => openEmail(email.id)}>
-              <p>{email.sender}</p>
-              <p>{email.subject}</p>
-            </div>
-          ))}
           <div className="email-info">
             <p> Hello </p>
             <p className="welcome"> Welcome </p>
