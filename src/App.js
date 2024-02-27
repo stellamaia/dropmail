@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import './App.css';
 import axios from "axios";
 
-const AUTH_TOKEN = "web-test-20240226wxTbS";
+const AUTH_TOKEN = "web-test-20240227VCbTv";
 const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
 
 const fetchInbox = async (webSocket) => {
@@ -20,12 +20,28 @@ const fetchInbox = async (webSocket) => {
 const App = () => {
   const [email, setEmail] = useState(localStorage.getItem('temporaryEmail') || '');
   const [webSocket, setWebSocket] = useState(null); // Estado para armazenar o WebSocket
+  const [refreshTime, setRefreshTime] = useState(1000);
 
   useEffect(() => {
     if (!email) {
       generateTempEmail();
     }
-  }, []);
+  
+    const interval = setInterval(() => {
+      setRefreshTime(prevTime => prevTime === 0 ? 1000 : prevTime - 1);
+      if (refreshTime === 1) {
+        generateTempEmail();
+      }
+    }, 1000);
+  
+    return () => {
+      clearInterval(interval);
+      if (webSocket !== null) {
+        webSocket.close();
+      }
+    };
+  },  [email, refreshTime, webSocket]);
+  
 
   const generateTempEmail = async () => {
     try {
@@ -56,22 +72,25 @@ const App = () => {
   const initializeWebSocket = () => {
     const ws = new WebSocket(`wss://dropmail.me/api/graphql/${AUTH_TOKEN}/websocket`);
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('conectado');
       setWebSocket(ws);
     };
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log('desconectado');
       setWebSocket(null);
     };
   };
 
-  const refreshInbox = () => {
+  const refreshInbox = async () => {
     if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
       initializeWebSocket();
     } else {
       fetchInbox(webSocket);
     }
+    // Atualiza o email chamando a função generateTempEmail
+    await generateTempEmail();
   };
+  
 
   return (
     <div>
@@ -98,10 +117,13 @@ const App = () => {
             <img className="copy-img" src="./copy.png" alt="Copy" />
             Copy
           </button>
+          
         </div>
       </div>
       <div className="refresh-container">
-        <button className="refresh" onClick={refreshInbox}>Refresh Inbox</button> 
+      <p>Autorefresh in {refreshTime} seconds</p>
+
+        <button className="refresh" onClick={refreshInbox}>Refresh </button> 
       </div>
     
       <div className="container-email">
