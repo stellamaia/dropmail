@@ -4,6 +4,7 @@ import axios from "axios";
 
 const AUTH_TOKEN = "web-test-20240227VCbTv";
 const CORS_PROXY = "https://cors-anywhere.herokuapp.com/";
+const emailBody = "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy."
 
 const fetchInbox = async (webSocket) => {
   try {
@@ -21,6 +22,7 @@ const App = () => {
   const [email, setEmail] = useState(localStorage.getItem('temporaryEmail') || '');
   const [webSocket, setWebSocket] = useState(null); // Estado para armazenar o WebSocket
   const [refreshTime, setRefreshTime] = useState(1000);
+
 
   useEffect(() => {
     if (!email) {
@@ -132,13 +134,20 @@ const App = () => {
           <div className="email-info">
             <p> Hello </p>
             <p className="welcome"> Welcome </p>
-            <p>Your temp email</p>
+            <p> {emailBody.substring(0, 45)}...
+</p>
           </div>
         </div>
         <div className="right-container">
           <p className="invisible-section"> </p>
-          <p className="email-section"> teste </p>
-          <textarea className="email-body" />
+          <p className="email-section"> Welcome </p>
+          <div className="email-body"> 
+        
+          <p>{emailBody}</p>
+    
+
+          </div>
+         
         </div>
       </div>
     </div>
